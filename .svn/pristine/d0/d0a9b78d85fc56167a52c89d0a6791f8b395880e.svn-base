@@ -1,0 +1,40 @@
+//
+//  HKWebVC.m
+//  YuanXin_Project
+//
+//  Created by Yuanin on 2017/5/11.
+//  Copyright © 2017年 yuanxin. All rights reserved.
+//
+
+#import "HKWebVC.h"
+
+@interface HKWebVC ()<UIWebViewDelegate>
+
+@end
+
+@implementation HKWebVC
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.webView.delegate = self;
+    
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+   
+}
+- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType {
+
+    NSLog(@"%@",request);
+    
+    if ([request.URL.path isEqualToString:@"/ios.html"]) {
+        
+        [self.navigationController popViewControllerAnimated:YES];
+
+    }
+    return YES;
+}
+
+
+@end

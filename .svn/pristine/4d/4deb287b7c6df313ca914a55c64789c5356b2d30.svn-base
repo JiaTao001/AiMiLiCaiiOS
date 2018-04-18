@@ -1,0 +1,49 @@
+//
+//  setSecretViewController.m
+//  YuanXin_Project
+//
+//  Created by Yuanin on 17/3/28.
+//  Copyright © 2017年 yuanxin. All rights reserved.
+//
+
+#import "setSecretViewController.h"
+#import "FindPasswordVC.h"
+#import "VerifyCodeButton.h"
+#import "LimitTextField.h"
+#import "UINavigationBar+BackgroundColor.h"
+#import "UserinfoManager.h"
+@interface setSecretViewController ()
+
+@end
+
+@implementation setSecretViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    //     [self.navigationController.navigationBar setCustomBackgroundColor:Theme_Color];
+    [self.navigationController.navigationBar setCustomBackgroundColor:[UIColor clearColor]];
+    [self layoutNavigationLeftButtonWithImage:[UIImage imageNamed:Nav_Back_Image] block:^(UIViewController *viewController) {
+        [viewController.navigationController popViewControllerAnimated:YES];
+    }];
+    [self layoutNavigationLeftButtonWithImage:[UIImage imageNamed:@"返回"] block:^(UIViewController *viewController) {
+        
+        [self.navigationController popViewControllerAnimated:YES];
+    }];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

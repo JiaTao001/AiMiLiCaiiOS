@@ -1,0 +1,52 @@
+//
+//  ExperienceCell.m
+//  YuanXin_Project
+//
+//  Created by Yuanin on 16/4/27.
+//  Copyright © 2016年 yuanxin. All rights reserved.
+//
+
+#import "ExperienceCell.h"
+
+@implementation ExperienceCell
+
+- (void)configureCellWithInfo:(NSDictionary *)aDic {
+    [super configureCellWithInfo:aDic];
+    
+    NSInteger status = [aDic[@"status"] integerValue];
+
+    self.rewardBakcground.image = [UIImage imageNamed:0 == status ? @"experience_valid" : @"experience_invalid"];
+    self.money.textColor         = self.rewardState.textColor;
+    self.name.textColor          = self.rewardState.textColor;
+    self.symbol.textColor        = self.rewardState.textColor;
+    self.time.textColor          = self.rewardState.textColor;
+    self.rewardExplain.textColor = self.rewardState.textColor;
+}
+
+- (NSString *)rewardStateDescriptionWithState:(NSInteger)state {
+    
+    switch (state) {
+        case 0:
+            return @"立即使用";
+            break;
+        case 1:
+            return @"已使用";
+            break;
+        case 2:
+            return @"已过期";
+            break;
+            
+        default:
+            return @"未定义";
+    }
+}
+
+/*
+// Only override drawRect: if you perform custom drawing.
+// An empty implementation adversely affects performance during animation.
+- (void)drawRect:(CGRect)rect {
+    // Drawing code
+}
+*/
+
+@end

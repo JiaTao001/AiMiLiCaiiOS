@@ -1,0 +1,23 @@
+//
+//  RecommendProductCell.m
+//  YuanXin_Project
+//
+//  Created by Yuanin on 16/4/19.
+//  Copyright © 2016年 yuanxin. All rights reserved.
+//
+
+#import "RecommendProductCell.h"
+
+
+@implementation RecommendProductCell
+
+- (void)loadInterfactInfoWithProductInfo:(RecommendProductInfo *)aInfo {
+    
+    [super loadInterfactInfoWithProductInfo:aInfo];
+    
+    self.variableFlag.image = [UIImage imageNamed:aInfo.isNewReconmend ? @"new_user" : @"hot_recommend"];
+    self.variableDescription.text = aInfo.isNewReconmend ? @"新手推荐" : @"热门推荐";
+}
+
+
+@end

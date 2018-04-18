@@ -1,0 +1,204 @@
+//
+//  EntrustVC.m
+//  YuanXin_Project
+//
+//  Created by Yuanin on 16/5/3.
+//  Copyright © 2016年 yuanxin. All rights reserved.
+//
+
+#import "EntrustVC.h"
+
+#import "RegularEntrustVC.h"
+#import "OptimizationEntrustVC.h"
+
+#import "MJRefresh.h"
+#import "EntrustCell.h"
+#import "StateTableView.h"
+
+#import "ExclusiveButton.h"
+#import "EntrustViewModel.h"
+
+@interface EntrustVC () <UITableViewDataSource>
+
+@property (strong, nonatomic) EntrustViewModel *optimizationEntrust;
+@property (strong, nonatomic) EntrustViewModel *regularEntrust;
+@property (assign, nonatomic) EntrustType showType;
+
+@property (strong, nonatomic) IBOutlet ExclusiveButton    *exclusiveButtons;
+@property (weak, nonatomic  ) IBOutlet NSLayoutConstraint *lineX;
+@property (weak, nonatomic  ) IBOutlet StateTableView     *entrustTableView;
+@property (weak, nonatomic) IBOutlet UIButton *addButton;
+
+@property (strong, nonatomic) UIButton *addedEntrust;
+@end
+
+@implementation EntrustVC
+@synthesize showType = _showType;
+
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    [self layoutNavigationLeftButtonWithImage:[UIImage imageNamed:Nav_Back_Image] block:^(__kindof UIViewController *viewController) {
+        [viewController.navigationController popViewControllerAnimated:YES];
+    }];
+    
+    self.addedEntrust = [self layoutNavigationRightButtonWithTitle:@"规则说明" color:nil block:^(EntrustVC *viewController) {
+        
+//        [viewController performSegueWithIdentifier:kEntrustRegular == viewController.showType ? To_Regular_Entrust_Segue_Identifier : To_Optimization_Entrust_Segue_Identifier sender:nil];
+    }];
+    
+    [self.entrustTableView.header beginRefreshing];
+}
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+    
+    [[self showEntrust] cancelFetchOperation];
+}
+
+- (IBAction)addButtonClicked:(id)sender {
+    [(EntrustVC *)self performSegueWithIdentifier:To_Regular_Entrust_Segue_Identifier sender:nil ];
+}
+
+
+#pragma mark - UITableViewDataSource
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    
+    return [self showEntrust].entrustInfo.count;
+}
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    EntrustCell *cell = [tableView dequeueReusableCellWithIdentifier:@"EntrustCell"];
+    
+    [cell loadInterfaceWithDictionary:[self showEntrust].entrustInfo[indexPath.row]];
+    @weakify(self)
+    cell.changeStateBlock = ^(UISwitch *entrustSwitch) {
+        @strongify(self)
+        
+        [BaseIndicatorView showInView:self.view maskType:kIndicatorMaskContent];
+        [[self showEntrust] changeEntrustStateWithIndex:indexPath.row on:entrustSwitch.on success:^(id result) {
+            @strongify(self)
+            
+            [BaseIndicatorView hideWithAnimation:self.didShow];
+            [self.entrustTableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+        } failure:^(NSString *errorDescription) {
+            @strongify(self)
+            
+            [BaseIndicatorView hideWithAnimation:self.didShow];
+            entrustSwitch.on = !entrustSwitch.on;
+            [SpringAlertView showMessage:errorDescription];
+        }];
+    };
+    
+    return cell;
+}
+
+
+#pragma mark - setter
+- (void)setExclusiveButtons:(ExclusiveButton *)exclusiveButtons {
+    _exclusiveButtons = exclusiveButtons;
+    
+    @weakify(self)
+    exclusiveButtons.invalidButtonWillChangeBlock = ^(UIButton *newInvalidButton) {
+        @strongify(self)
+        
+        self.lineX.constant = CGRectGetMinX(newInvalidButton.frame);
+        self.showType = newInvalidButton.tag;
+    };
+}
+- (void)setEntrustTableView:(StateTableView *)entrustTableView {
+    _entrustTableView = entrustTableView;
+    
+    entrustTableView.tableFooterView = [UIView new];
+    
+    @weakify(self)
+    entrustTableView.header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+        @strongify(self)
+        
+        [[self showEntrust] beginFetchEntrustWithSuccess:^(id result) {
+            @strongify(self)
+            
+            self.entrustTableView.type = 0 == [self showEntrust].entrustInfo.count ? kTableStateNoInfo : kTableStateNormal;
+            [self.entrustTableView.header endRefreshing];
+            [self.entrustTableView reloadData];
+        } failure:^(NSString *errorDescription) {
+            @strongify(self)
+            
+            self.entrustTableView.type = ( errorDescription && 0 == [self showEntrust].entrustInfo.count) ? kTableStateNetworkError : kTableStateNormal;
+            [self.entrustTableView.header endRefreshing];
+            [SpringAlertView showMessage:errorDescription];
+        }];
+    }];
+    entrustTableView.footer = [MJRefreshBackNormalFooter footerWithRefreshingBlock:^{
+        @strongify(self)
+        
+        [[self showEntrust] fetchNextPageEntrustWithSuccess:^(id result) {
+            @strongify(self)
+            
+            [self.entrustTableView.footer endRefreshing];
+            [self.entrustTableView reloadData];
+        } failure:^(NSString *errorDescription) {
+            @strongify(self)
+            
+            [self.entrustTableView.footer endRefreshing];
+            [SpringAlertView showMessage:errorDescription];
+        }];
+    }];
+    
+    [entrustTableView setClickCallBack:^{
+        @strongify(self)
+        
+        [self.entrustTableView.header beginRefreshing];
+    }];
+}
+- (void)setShowType:(EntrustType)showType {
+    
+    _showType = showType;
+    
+    [self.entrustTableView reloadData];
+    if ([self needRefresh:showType]) {
+        [self.entrustTableView.header endRefreshing];
+        [self.entrustTableView.header beginRefreshing];
+    } else {
+        self.entrustTableView.type = kTableStateNormal;
+    }
+}
+- (BOOL)needRefresh:(EntrustType) type {
+    
+    return (kEntrustRegular == type && !self.regularEntrust.entrustInfo.count) || (kEntrustOptimization == type && !self.optimizationEntrust.entrustInfo.count);
+}
+- (EntrustViewModel *)showEntrust {
+    
+    return kEntrustRegular == self.showType ? self.regularEntrust : self.optimizationEntrust;
+}
+
+#pragma mark - getter
+- (EntrustViewModel *)regularEntrust {
+    
+    if (!_regularEntrust) {
+        _regularEntrust = [[EntrustViewModel alloc] init];
+        _regularEntrust.type = kEntrustRegular;
+    }
+    return _regularEntrust;
+}
+- (EntrustViewModel *)optimizationEntrust {
+    
+    if (!_optimizationEntrust) {
+        _optimizationEntrust = [[EntrustViewModel alloc] init];
+        _optimizationEntrust.type = kEntrustOptimization;
+    }
+    return _optimizationEntrust;
+}
+
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    [super prepareForSegue:segue sender:sender];
+    
+    if ([segue.destinationViewController respondsToSelector:@selector(setEntrustSuccess:)]) {
+        [segue.destinationViewController setEntrustSuccess:^{
+            
+            [self.entrustTableView.header beginRefreshing];
+        }];
+    }
+}
+@end

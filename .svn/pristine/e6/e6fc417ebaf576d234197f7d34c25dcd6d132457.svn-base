@@ -1,0 +1,32 @@
+//
+//  WebVC.h
+//  YuanXin_Project
+//
+//  Created by Yuanin on 15/10/29.
+//  Copyright © 2015年 yuanxin. All rights reserved.
+//
+
+#import "BaseViewController.h"
+
+#define Introduce_Safe      @"safe.html"
+#define Introduce_Help      @"help.php"
+#define Introduce_Protocol  @"userprotocol.html"
+#define Introduce_Buy       @"buyprotocols.html"
+#define Introduct_Bind_Bank @"bandbankcard.html"
+#define Introduct_Entrust   @"wtrule.html"
+
+@interface WebVC : BaseViewController  <UIWebViewDelegate>
+
+@property (strong, nonatomic, readonly) UIWebView *webView;
+
+@property (strong, nonatomic) NSString *webPath;
+
+- (instancetype)initWithWebPath:(NSString *)webPath;
++ (instancetype)webVCWithWebPath:(NSString *)webPath;
+
+/**
+ *  Subclass Custom Action
+ */
+- (void)configureNavifationLeftButton;
+
+@end

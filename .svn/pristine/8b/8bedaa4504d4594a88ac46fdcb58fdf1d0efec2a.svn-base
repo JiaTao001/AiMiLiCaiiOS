@@ -1,0 +1,45 @@
+//
+//  EntrustCell.m
+//  YuanXin_Project
+//
+//  Created by Yuanin on 16/5/3.
+//  Copyright © 2016年 yuanxin. All rights reserved.
+//
+
+#import "EntrustCell.h"
+
+@implementation EntrustCell
+
+- (void)awakeFromNib {
+    [super awakeFromNib];
+    // Initialization code
+}
+
+- (void)setSelected:(BOOL)selected animated:(BOOL)animated {
+    [super setSelected:selected animated:animated];
+
+    // Configure the view for the selected state
+}
+
+- (void)loadInterfaceWithDictionary:(NSDictionary *)aDic {
+
+    self.entrustName.text     = aDic[@"title"];
+    self.entrustState.text    = aDic[@"statusname"];
+    self.investTime.text      = aDic[@"term"];
+    self.annual.text          = aDic[@"annual"];
+    self.amount.text          = aDic[@"amount"];
+    self.startTime.text       = aDic[@"date"];
+    
+    self.entrustSwitch.hidden = ![aDic[@"isshow"] boolValue];
+    self.entrustSwitch.on     = 1 == [aDic[@"isshow"] integerValue];
+}
+
+- (IBAction)changeEntrustState:(UISwitch *)sender {
+    
+    if (self.changeStateBlock) {
+        self.changeStateBlock(sender);
+    }
+}
+
+
+@end

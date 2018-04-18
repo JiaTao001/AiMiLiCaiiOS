@@ -1,0 +1,191 @@
+//
+//  RegularEntrustVC.m
+//  YuanXin_Project
+//
+//  Created by Yuanin on 16/5/3.
+//  Copyright © 2016年 yuanxin. All rights reserved.
+//
+
+#import "RegularEntrustVC.h"
+
+#import "WebVC.h"
+
+#import "RegularInfoView.h"
+#import "PickerAccessoryView.h"
+#import "LimitTextField.h"
+
+#import "BaseViewModel.h"
+#import "ExclusiveButton.h"
+
+@interface RegularEntrustVC () <UITextFieldDelegate>
+
+@property (strong, nonatomic) NSArray       *regularInfo;
+@property (strong, nonatomic) BaseViewModel *baseViewModel;
+@property (strong, nonatomic) UIDatePicker  *datePicker;
+@property (strong, nonatomic) NSDateFormatter *dateFormat;
+
+@property (strong, nonatomic) IBOutlet ExclusiveButton *exclusiveButtons;
+@property (weak, nonatomic) IBOutlet UIScrollView *contentView;
+@property (weak, nonatomic) IBOutlet UIButton *saveAndEntrust;
+@property (strong, nonatomic) IBOutletCollection(RegularInfoView) NSArray<RegularInfoView *> *regularInfoViews;
+
+@property (weak, nonatomic) IBOutlet LimitTextField *entrustMoney;
+@property (weak, nonatomic) IBOutlet UITextField *entrustTime;
+@property (weak, nonatomic) IBOutlet UILabel *balance;
+@end
+
+
+@implementation RegularEntrustVC
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    [self layoutNavigationLeftButtonWithImage:[UIImage imageNamed:Nav_Back_Image] block:^(__kindof UIViewController *viewController) {
+        [viewController.navigationController popViewControllerAnimated:YES];
+    }];
+    
+    [self fetchRegularEntrustInfo];
+}
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+    
+    [self.baseViewModel cancelFetchOperation];
+}
+
+
+- (void)fetchRegularEntrustInfo {
+//    2.8、getentrustdepositproject （定期委托理财产品列表）
+//    返回list  id（定期理财项目id）、period（期限《1、3、6、12月》）、apr（年化收益率）、projectname（名称）
+    [BaseIndicatorView showInView:self.view maskType:kIndicatorNoMask];
+    @weakify(self)
+    [self.baseViewModel postMethod:@"getentrustdepositproject" params:[[UserinfoManager sharedUserinfo] increaseUserParams:nil] success:^(id result) {
+        @strongify(self)
+        
+        [BaseIndicatorView hideWithAnimation:self.didShow];
+        self.regularInfo = result[RESULT_DATA];
+    } failure:^(id result, NSString *errorDescription) {
+        @strongify(self)
+        
+        [BaseIndicatorView hideWithAnimation:self.didShow];
+        [SpringAlertView showMessage:errorDescription];
+    }];
+}
+- (void)setRegularInfo:(NSArray *)regularInfo {
+    if (regularInfo.count < 4) return;
+    if ([_regularInfo isEqualToArray:regularInfo]) return;
+    
+    _regularInfo = regularInfo;
+    
+    for (RegularInfoView *view in self.regularInfoViews) {
+        [view loadInterfaceWithDictionary:regularInfo[view.tag]];
+    }
+    
+    self.contentView.hidden = NO;
+    self.saveAndEntrust.hidden = NO;
+}
+
+#pragma mark - delegate
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    
+    [textField endEditing:YES];
+    return YES;
+}
+
+#pragma mark - action
+- (IBAction)entrust {
+//    2.9、saveentrustdeposit （保存定期委托投资） => userid（用户uid）、mobile（手机号）、borrow_id（定期理财项目id）、amount（委托金额）、entrustdate（委托时间）
+//    返回值 result=1表示委托成功；0表示委托失败
+    
+    if (!self.entrustMoney.success || [self.entrustMoney.text integerValue]%100 != 0 || [self.entrustMoney.text integerValue] < 1000) {
+        [SpringAlertView showMessage:NSLocalizedString(@"err_money", nil)];
+        return;
+    }
+    
+    NSMutableDictionary *params = [[UserinfoManager sharedUserinfo] increaseUserParams:nil];
+    [params addEntriesFromDictionary:@{@"borrow_id":self.regularInfo[self.exclusiveButtons.invalidButton.tag][@"id"], @"amount": self.entrustMoney.text, @"entrustdate":self.entrustTime.text}];
+    
+    @weakify(self)
+    [self.baseViewModel postMethod:@"saveentrustdeposit" params:params success:^(id result) {
+        @strongify(self)
+        
+        [SpringAlertView showMessage:result[RESULT_REMARK]];
+        [self.navigationController popViewControllerAnimated:YES];
+        if (self.entrustSuccess) {
+            self.entrustSuccess();
+        }
+    } failure:^(id result, NSString *errorDescription) {
+        
+        [SpringAlertView showMessage:errorDescription];
+    }];
+}
+
+
+- (IBAction)intoProtocol:(UIButton *)sender {
+    
+    [self.navigationController pushViewController:[WebVC webVCWithWebPath:[CommonTools completeWebPathWithSubpath:0 == sender.tag ? Introduce_Buy : Introduct_Entrust]] animated:YES];
+}
+
+#pragma mark - setter
+- (void)setRegularInfoViews:(NSArray<RegularInfoView *> *)regularInfoViews {
+    _regularInfoViews = regularInfoViews;
+    
+    for (RegularInfoView *view in regularInfoViews) {
+        if (0 == view.tag) {
+            [self.exclusiveButtons appendButton:view.clickButton invalid:YES];
+        } else {
+            [self.exclusiveButtons appendButton:view.clickButton invalid:NO];
+        }
+        view.clickButton.tag = view.tag;
+    }
+}
+- (void)setEntrustTime:(UITextField *)entrustTime {
+    _entrustTime = entrustTime;
+    
+    entrustTime.text = [self.dateFormat stringFromDate:[NSDate date]];
+    entrustTime.inputView = self.datePicker;
+    
+    @weakify(self);
+    entrustTime.inputAccessoryView = [PickerAccessoryView pickerAccessoryViewWithDoneBlock:^{
+        @strongify(self)
+        
+        [self.entrustTime endEditing:YES];
+        self.entrustTime.text = [self.dateFormat stringFromDate:self.datePicker.date];
+    } cancelBlock:^{
+        @strongify(self)
+        
+        [self.entrustTime endEditing:YES];
+    }];
+}
+- (void)setBalance:(UILabel *)balance {
+    _balance = balance;
+    
+    [RACObserve([UserinfoManager sharedUserinfo].userInfo, balance) subscribeNext:^(NSString *newBalance) {
+        balance.text = newBalance;
+    }];
+}
+
+#pragma mark - getter
+- (BaseViewModel *)baseViewModel {
+    if (!_baseViewModel) {
+        _baseViewModel = [[BaseViewModel alloc] init];
+    }
+    return _baseViewModel;
+}
+- (UIDatePicker *)datePicker {
+    
+    if (!_datePicker) {
+        _datePicker = [[UIDatePicker alloc] init];
+        _datePicker.datePickerMode = UIDatePickerModeDate;
+        _datePicker.minimumDate = [NSDate date];
+    }
+    return _datePicker;
+}
+- (NSDateFormatter *)dateFormat {
+    
+    if (!_dateFormat) {
+        _dateFormat = [[NSDateFormatter alloc] init];
+        _dateFormat.dateFormat = @"y/MM/dd";
+    }
+    return _dateFormat;
+}
+@end

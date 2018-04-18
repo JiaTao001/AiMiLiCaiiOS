@@ -1,0 +1,24 @@
+//
+//  RecommendProductCell.m
+//  YuanXin_Project
+//
+//  Created by Yuanin on 16/4/19.
+//  Copyright © 2016年 yuanxin. All rights reserved.
+//
+
+#import "RecommendProductCell.h"
+
+
+@implementation RecommendProductCell
+
+- (void)loadInterfactInfoWithProductInfo:(RecommendProductInfo *)aInfo {
+    
+    self.replyMethodLB.text     = aInfo.replyMethod;
+
+    self.rateLB.text  = aInfo.annualInterest;
+    self.timeLB.text      = [aInfo theTermOfProduct];
+    self.moneyLB.text     = [aInfo theRestOfShare];
+}
+
+
+@end
