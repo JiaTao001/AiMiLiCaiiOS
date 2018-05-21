@@ -10,7 +10,7 @@
 
 /////////////////////////////////////////URL
 #ifdef DEBUG
-    #define hostUrl @"http://csapi.yuanin.com/"
+ #define hostUrl @"http://csapi.yuanin.com/"
 //#define hostUrl @"https://wcapi.aimilicai.com/"
 //#define hostUrl @"https://shapi.aimilicai.com/"
 
