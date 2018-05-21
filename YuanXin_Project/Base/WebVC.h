@@ -25,7 +25,7 @@
 + (instancetype)webVCWithWebPath:(NSString *)webPath;
 
 /**
- *  Subclass Custom Action
+ *       Subclass Custom Action
  */
 - (void)configureNavifationLeftButton;
 
