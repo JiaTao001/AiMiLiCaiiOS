@@ -1,6 +1,0 @@
-platform :ios, '7.0'
-target "YuanXin_Project" do
-pod 'ReactiveCocoa'
-pod 'UMengAnalytics-NO-IDFA'
-pod 'AFNetworking'
-end
